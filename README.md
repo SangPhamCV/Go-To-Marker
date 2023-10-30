@@ -28,10 +28,10 @@ Make sure you have the following packages installed
 ### Installation
 
    ```sh
-   git clone https://github.com/yourusername/your-project.git
+   https://github.com/SangPhamCV/Go-To-Marker.git
    ```
-   
+
 ## Usage
 
 ```bash
-$ roslaunch movetomarker 
+$ roslaunch movetomarker MoveToMarker.launch
