@@ -28,7 +28,7 @@ Make sure you have the following packages installed
 ### Installation
 
    ```sh
-   https://github.com/SangPhamCV/Go-To-Marker.git
+   git clone https://github.com/SangPhamCV/Go-To-Marker.git
    ```
 
 ## Usage
