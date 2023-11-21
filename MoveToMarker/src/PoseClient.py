@@ -6,7 +6,7 @@ import rospy
 from movetomarker.srv import GetMclPose, GetMclPoseRequest, GetArucoPose, GetArucoPoseRequest
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import math
+from math import *
 import tf.transformations as tf_trans
 from MapToAruco import MapToAruco
 
@@ -48,31 +48,62 @@ def request_aruco_pose():
 def movebase_client(x, y):
     global aruco_pitch_data
     global mcl_yaw_data
-
+    d = 0.35
+    new_x = None
+    new_y = None
     theta = mcl_yaw_data - aruco_pitch_data
-    z_value = math.sin(theta/2)
-    w_value = math.cos(theta/2)
+    new_theta = theta + pi
+    z_value = sin(new_theta/2)
+    w_value = cos(new_theta/2)
+
+    if theta > 0 and theta < pi/2:
+        new_x = x - d * cos(theta)
+        new_y = y - d * sin(theta)
+    elif theta < 0 and theta > -pi/2:
+        new_x = x - d * cos(theta)
+        new_y = y - d * sin(theta)
+    elif theta > pi/2 and theta < pi:
+        new_x = x + d * cos(pi - theta)
+        new_y = y - d * sin(pi - theta) 
+    elif theta < -pi/2 and theta > -pi:
+        new_x = x + d * cos(pi + theta)
+        new_y = y + d * sin(pi + theta)
+    elif theta == 0:
+        new_x = x - d
+        new_y = y
+    elif theta == -pi/2:
+        new_x = x
+        new_y = y + d
+    elif theta == pi or theta == -pi:
+        new_x = x + d
+        new_y = y
+    elif theta == pi/2:
+        new_x = x
+        new_y = y - d
+
+    rospy.loginfo(f"new x: {new_x}, new y: {new_y}, new theta: {theta}")
+    rospy.loginfo(f"x: {x}, y: {y}, theta: {theta}")
 
     client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
     client.wait_for_server()
+    if new_x is not None and new_y is not None:
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position.x = new_x
+        goal.target_pose.pose.position.y = new_y
 
-    goal = MoveBaseGoal()
-    goal.target_pose.header.frame_id = "map"
-    goal.target_pose.header.stamp = rospy.Time.now()
-    goal.target_pose.pose.position.x = x
-    goal.target_pose.pose.position.y = y
+        goal.target_pose.pose.orientation.z = z_value
+        goal.target_pose.pose.orientation.w = w_value
 
-    goal.target_pose.pose.orientation.z = z_value
-    goal.target_pose.pose.orientation.w = w_value
-
-    rospy.loginfo(goal.target_pose)
-    client.send_goal(goal)
-    wait = client.wait_for_result()
-    if not wait:
-        rospy.logerr("Action server not available!")
-        rospy.signal_shutdown("Action server not available!")
-    else:
-        return client.get_result()
+        rospy.loginfo(goal.target_pose)
+        client.send_goal(goal)
+        wait = client.wait_for_result()
+        if not wait:
+            rospy.logerr("Action server not available!")
+            rospy.signal_shutdown("Action server not available!")
+        else:
+            return client.get_result()
         
 
 if __name__ == '__main__':
